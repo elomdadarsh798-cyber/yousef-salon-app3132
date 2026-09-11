@@ -2,26 +2,13 @@ import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
-// ============================================================
-// NEW FIREBASE PROJECT CONFIGURATION
-// Replace these values with your new Firebase Web App config.
-//
-// Where to get them:
-//   Firebase Console -> (your new project) -> Project settings (gear icon)
-//   -> scroll to "Your apps" -> Web app -> SDK setup and configuration
-//   -> "Config" radio button.
-//
-// This file MUST use the exact same Firebase project as the customer
-// booking app (../customer-booking-app/src/firebase.js) - copy the
-// same config object into both.
-// ============================================================
 export const firebaseConfig = {
-  apiKey: "REPLACE_WITH_YOUR_API_KEY",
-  authDomain: "REPLACE_WITH_YOUR_PROJECT.firebaseapp.com",
-  projectId: "REPLACE_WITH_YOUR_PROJECT_ID",
-  storageBucket: "REPLACE_WITH_YOUR_PROJECT.firebasestorage.app",
-  messagingSenderId: "REPLACE_WITH_YOUR_SENDER_ID",
-  appId: "REPLACE_WITH_YOUR_APP_ID",
+  apiKey: "AIzaSyBVePpKrpi4UxaYBPnzgrX5rQfRmJKmYW4",
+  authDomain: "yousef-barbershop.firebaseapp.com",
+  projectId: "yousef-barbershop",
+  storageBucket: "yousef-barbershop.firebasestorage.app",
+  messagingSenderId: "931103299700",
+  appId: "1:931103299700:web:f4ad84856a0b4912b9d921",
 };
 
 const app = initializeApp(firebaseConfig);
