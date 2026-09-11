@@ -1,0 +1,113 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -----------------------------------------------------------------
+    // Identity helpers
+    // -----------------------------------------------------------------
+    // "staff" = signed in through Login.jsx with email/password (owner,
+    // manager, cashier, or barber - all use Firebase Auth accounts).
+    // Role-level separation (owner vs cashier vs barber) is NOT enforced
+    // here: roles live inside the bp_team document (one array), not in
+    // Firebase Auth custom claims, and Firestore rules cannot cheaply
+    // search inside an array field for "does this email have role X".
+    // Enforcing that properly needs either custom claims (set by a
+    // Cloud Function when a role changes) or moving bp_team into one
+    // document per staff member. Until then, any staff login has the
+    // same database access as any other staff login.
+    function isStaff() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'password';
+    }
+
+    // "customer" = the public booking app (customer-booking-app), which
+    // signs in anonymously. This proves nothing about phone-number
+    // ownership - only that some browser session exists. Do NOT use
+    // this to claim a customer "owns" a phone number.
+    function isCustomer() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
+    // -----------------------------------------------------------------
+    // barberpro/{docId} - every admin-app "table" is one document here,
+    // holding its whole array under a `value` field (see usePersistentState
+    // in App.jsx / useDoc in the booking app). Firestore rules apply at the
+    // document level, so this is the finest granularity available without
+    // restructuring the data into subcollections.
+    // -----------------------------------------------------------------
+    match /barberpro/{docId} {
+
+      // Public-facing configuration the customer booking app reads live:
+      // services, staff list, salon settings, the shared queue, and the
+      // learned per-staff/service duration stats used for wait estimates.
+      function isCustomerFacingDoc() {
+        return docId in ['bp_services', 'bp_staff', 'bp_settings', 'bp_queue', 'bp_duration_stats'];
+      }
+
+      allow read: if isStaff() || (isCustomer() && isCustomerFacingDoc());
+
+      // Staff (any role) can write anything - same broad access every
+      // staff login already had before this change.
+      allow write: if isStaff();
+
+      // Customers may only ever touch bp_queue, and only to append their
+      // own new booking (bp_queue is seeded once by the admin app, so in
+      // practice this is always an "update" of an existing document, never
+      // a fresh "create") or flip the status of an existing entry (mark
+      // "on the way" / cancel) - never to shrink the list or wipe entries.
+      //
+      // KNOWN LIMITATION: this can only check the *shape* of the change
+      // (list grew by exactly one item, or stayed the same size), not
+      // *which* array element was changed or whether it belongs to the
+      // requester. A misbehaving anonymous client could still, in theory,
+      // overwrite a different customer's queue entry while keeping the
+      // array the same size. Fully closing that gap requires either a
+      // Cloud Function as the only writer to bp_queue, or moving queue
+      // entries into their own subcollection (one document per booking,
+      // each ownable/checkable individually). That is a real structural
+      // change, not a rules tweak - flagging it rather than pretending
+      // this closes it completely.
+      allow create: if isCustomer() && docId == 'bp_queue'
+                    && request.resource.data.value is list
+                    && request.resource.data.value.size() == 1;
+
+      allow update: if isCustomer() && docId == 'bp_queue'
+                    && request.resource.data.value is list
+                    && resource.data.value is list
+                    && (
+                         request.resource.data.value.size() == resource.data.value.size()
+                         || request.resource.data.value.size() == resource.data.value.size() + 1
+                       );
+    }
+
+    // -----------------------------------------------------------------
+    // Per-customer read models, keyed by phone number.
+    //
+    // KNOWN LIMITATION: with only Anonymous Auth, there is no way for
+    // these rules to verify that the caller actually owns the phone
+    // number in {phone} - any signed-in customer session can read any
+    // other customer's points/history by guessing or trying phone
+    // numbers. Real isolation (a customer can only read their OWN
+    // account) requires Phone Number (OTP) authentication, where
+    // request.auth.token.phone_number can be compared to {phone}. Until
+    // that's added, treat this as "hidden by not being linked in the
+    // UI", not as "secured".
+    // -----------------------------------------------------------------
+    match /customerPoints/{phone} {
+      allow read: if isStaff() || isCustomer();
+      allow write: if isStaff();
+    }
+
+    match /customerBookings/{phone} {
+      allow read: if isStaff() || isCustomer();
+      allow write: if isStaff();
+    }
+
+    // Everything else: no default access. (The old rules had a catch-all
+    // `match /{document=**}` that granted read+write to any authenticated
+    // user on literally every document in the project - meaning ANY
+    // authenticated user, including a future anonymous customer, could
+    // read payroll, invoices, and staff financial data. Removing that
+    // catch-all is the actual fix; anything added later needs its own
+    // explicit match block above.)
+  }
+}

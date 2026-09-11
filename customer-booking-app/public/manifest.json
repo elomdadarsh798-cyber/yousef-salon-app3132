@@ -1,0 +1,10 @@
+{
+  "name": "احجز موعدك",
+  "short_name": "احجز",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0A09",
+  "theme_color": "#0B0A09",
+  "lang": "ar",
+  "dir": "rtl"
+}
