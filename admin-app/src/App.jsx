@@ -993,7 +993,7 @@ function StaffForm({ initial, onSave }) {
       <div className="grid grid-cols-2 gap-3">
         <Field label="الوظيفة">
           <Select value={f.role} onChange={(e) => setF({ ...f, role: e.target.value })}>
-            <option value="barber">حلاق</option><option value="senior">حلاق أول</option><option value="manager">مدير</option>
+            <option value="barber">حلاق</option><option value="assistant">مساعد</option><option value="manager">مدير</option>
           </Select>
         </Field>
         <Field label="تاريخ التعيين"><TextInput type="date" value={f.hireDate} onChange={(e) => setF({ ...f, hireDate: e.target.value })} /></Field>
@@ -1105,7 +1105,7 @@ function StaffDetail({ staffMember: s, setStaff, sales, withdrawals, setWithdraw
           <div className="w-14 h-14 rounded-full flex items-center justify-center display-font text-2xl" style={{ background: "var(--surface2)", color: "var(--gold)" }}>{s.name[0]}</div>
           <div>
             <div className="display-font text-2xl">{s.name}</div>
-            <div className="text-sm" style={{ color: "var(--muted)" }}>{s.phone} · {s.role === "senior" ? "حلاق أول" : s.role === "manager" ? "مدير" : "حلاق"} · كود: <span style={{ color: "var(--gold)" }}>{s.code || "—"}</span></div>
+            <div className="text-sm" style={{ color: "var(--muted)" }}>{s.phone} · {s.role === "assistant" ? "مساعد" : s.role === "manager" ? "مدير" : "حلاق"} · كود: <span style={{ color: "var(--gold)" }}>{s.code || "—"}</span></div>
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -2357,7 +2357,7 @@ function MyDashboardTab({ staffMember: s, staff, sales, withdrawals, setWithdraw
         <div className="w-14 h-14 rounded-full flex items-center justify-center display-font text-2xl" style={{ background: "var(--surface2)", color: "var(--gold)" }}>{s.name[0]}</div>
         <div>
           <h2 className="display-font text-3xl" style={{ color: "var(--gold)" }}>أهلاً، {s.name}</h2>
-          <div className="text-sm" style={{ color: "var(--muted)" }}>كود: {s.code || "—"} · {s.role === "senior" ? "حلاق أول" : "حلاق"}</div>
+          <div className="text-sm" style={{ color: "var(--muted)" }}>كود: {s.code || "—"} · {s.role === "assistant" ? "مساعد" : s.role === "manager" ? "مدير" : "حلاق"}</div>
         </div>
       </div>
 
